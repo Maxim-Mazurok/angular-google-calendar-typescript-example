@@ -119,6 +119,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "angular-google-calendar-typescript-example"
+    }
+  },
+  "defaultProject": "angular-google-calendar-typescript-example",
+  "cli": {
+    "analytics": "a299f3aa-c7b8-4280-8359-ce6655187c94"
+  }
 }
