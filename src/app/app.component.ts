@@ -1,16 +1,15 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
-// import 'gapi';
-// import 'gapi.auth2';
-// import 'gapi.client.calendar';
+import { Component, NgZone, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   isSignedIn = false;
   pre = '';
+
+  constructor(private zone: NgZone) {}
 
   initClient() {
     const updateSigninStatus = this.updateSigninStatus.bind(this);
@@ -24,18 +23,23 @@ export class AppComponent {
         ],
         scope: 'https://www.googleapis.com/auth/calendar.readonly',
       })
-      .then(function () {
-        // Listen for sign-in state changes.
-        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+      .then(() => {
+        this.zone.run(() => {
+          // Listen for sign-in state changes.
+          gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
 
-        // Handle the initial sign-in state.
-        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+          // Handle the initial sign-in state.
+          updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+        });
       });
   }
 
   updateSigninStatus(isSignedIn) {
+    console.log('updateSigninStatus', isSignedIn);
     this.isSignedIn = isSignedIn;
-    isSignedIn && this.listUpcomingEvents();
+    if (isSignedIn) {
+      this.listUpcomingEvents();
+    }
   }
 
   handleAuthClick() {
@@ -57,22 +61,23 @@ export class AppComponent {
         maxResults: 10,
         orderBy: 'startTime',
       })
-      .then(function (response) {
-        var events = response.result.items;
-        appendPre('Upcoming events:');
+      .then((response) => {
+        this.zone.run(() => {
+          const events = response.result.items;
+          appendPre('Upcoming events:');
 
-        if (events.length > 0) {
-          for (let i = 0; i < events.length; i++) {
-            var event = events[i];
-            var when = event.start.dateTime;
-            if (!when) {
-              when = event.start.date;
+          if (events.length > 0) {
+            for (const event of events) {
+              let when = event.start.dateTime;
+              if (!when) {
+                when = event.start.date;
+              }
+              appendPre(event.summary + ' (' + when + ')');
             }
-            appendPre(event.summary + ' (' + when + ')');
+          } else {
+            appendPre('No upcoming events found.');
           }
-        } else {
-          appendPre('No upcoming events found.');
-        }
+        });
       });
   }
 
